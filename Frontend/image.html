@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Pixel RGB</title>
+    <style>
+        /* body {
+            display: flex; 
+            flex-direction: column; 
+
+            align-content: space-evenly;
+            justify-content: space-evenly;  
+
+            align-items: center; 
+            
+            height: 100vh; 
+            
+            margin: 0;
+        } */
+    </style>
+</head>
+
+<body>
+    <input type="file" id="fileInput" > 
+    <!-- style="max-width: 80vw; max-height: 75vh; border:1px solid black;" -->
+    <canvas id="canvas" width="100vh" height="100vh"></canvas>
+    <p>Selected Pixel RGB: 
+        (<span id="redValue"></span>, 
+        <span id="greenValue"></span>, 
+        <span id="blueValue"></span>)
+    </p>
+    <p>Result: <span id="result"></span></p>
+
+    <script src="js/test.js"></script>
+    <!-- <script src="js/text.js"></script> -->
+</body>
+
+</html>

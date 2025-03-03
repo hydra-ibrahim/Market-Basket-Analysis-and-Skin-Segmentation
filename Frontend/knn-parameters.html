@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KNN Parameter</title>
+    <link rel="stylesheet" href="bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body class="d-flex flex-column mb-3 align-items-center justify-content-center vh-100">
+    <h1 style="margin-bottom: 50px;">Set KNN k Parameter</h1>
+    <div class="mb-3 row"><label for="k" class="form-label">K:</label>
+        <input type="number" name="k" id="k" class="form-control">
+    </div>
+    <div class="mb-3 row">
+        <button onclick="setParameters()" class="btn btn-primary">Submit</button>
+    </div>
+
+    <script>
+        function setParameters() {
+            let k = document.getElementById('k').value
+
+            fetch(`http://127.0.0.1:8000/knn/parameter/${k}/`, {
+                method: "POST",
+                mode: "cors",
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // return response.json();
+            })
+                .then(data => {
+                    open('image.html', '_self')
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item</title>
+    <link rel="stylesheet" href="bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="font-awesome-4.7.0/css/font-awesome.min.css">
+    <style>
+        #items {
+            display: flex;
+            flex-wrap: wrap;
+            row-gap: 10px;
+        }
+    </style>
+    <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <!-- Navbar-->
+        <nav class="navbar navbar-expand-lg fixed-top navbar-light bg-light">
+            <div class="container-fluid justify-content-center justify-content-md-between">
+                <div class="d-flex my-2 my-sm-0">
+                    <!-- <a class="navbar-brand me-2 mb-1 d-flex justify-content-center" href="#">
+                        <img src="https://mdbootstrap.com/img/logo/mdb-transaprent-noshadows.png" height="20" alt=""
+                            loading="lazy" />
+                    </a> -->
+
+                    <!-- Search form -->
+                    <form class="d-flex input-group w-auto my-auto">
+                        <input autocomplete="off" type="search" class="form-control rounded" placeholder="Search"
+                            style="min-width: 125px" />
+                        <span class="input-group-text border-0 d-none d-md-flex"><i class="fa fa-search"></i></span>
+                    </form>
+                </div>
+
+                <ul class="navbar-nav flex-row">
+                    <li class="nav-item me-3 me-lg-0">
+                        <a class="nav-link" href="#" role="button" data-mdb-toggle="sidenav"
+                            data-mdb-target="#sidenav-1" class="btn shadow-0 p-0 me-3" aria-controls="#sidenav-1"
+                            aria-haspopup="true">
+                            <i class="fa fa-bars me-1"></i>
+                            <span>Categories</span>
+                        </a>
+                    </li>
+                    <!-- Badge -->
+                    <li class="nav-item me-3 me-lg-0">
+                        <a class="nav-link" href="#">
+                            <span><i class="fa fa-shopping-cart" aria-hidden="true"></i></span>
+                            <span id="counter" class="badge rounded-pill badge-notification bg-danger">0</span>
+                        </a>
+                    </li>
+                    <!-- Notification dropdown -->
+                    <li class="nav-item dropdown me-3 me-lg-0">
+                        <a class="nav-link dropdown-toggle hidden-arrow" role="button" href="#" id="navbarDropdownMenuLink"
+                             data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-bell"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                            <li><a class="dropdown-item" href="#">Some news</a></li>
+                            <li><a class="dropdown-item" href="#">Another news</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#">Something else here</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item me-3 me-lg-0">
+                        <a class="nav-link" href="items.html">
+                            <span class="d-none d-lg-inline-block">Home</span>
+                            <i class="fa fa-shopping-bag" aria-hidden="true"></i>
+                        </a>
+                    </li>
+                    <!-- Avatar -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#"
+                            id="navbarDropdownMenuLink" role="button" data-mdb-toggle="dropdown" aria-expanded="false">
+                            <img src="https://mdbootstrap.com/img/Photos/Avatars/img (31).jpg" class="rounded-circle"
+                                height="22" alt="" loading="lazy" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownMenuLink">
+                            <li><a class="dropdown-item" href="#">My profile</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <div class="d-flex justify-content-around" style="margin-top: 100px;">
+        <img class="me-auto p-2 img-fluid" src="img/item.png" alt="item">
+        <div>
+            <h1 id="item-name" class="m-4 p-2"></h1>
+            <h3 id="item-price" class="m-4 p-2"></h3>
+            <button onclick="addToCart()" type="button" class="m-4 p-2 btn btn-primary"><i class="fa fa-shopping-cart"></i> Add to
+                cart</button>
+            <p class="m-4 p-2">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore
+                magna aliqua. Tellus orci ac auctor augue mauris. Et tortor consequat id porta nibh venenatis cras sed.
+            </p>
+            <p class="m-4 p-2">Nibh praesent tristique magna sit amet purus gravida quis. Viverra nam libero justo laoreet. Dui accumsan
+                sit
+                amet nulla facilisi morbi tempus. Mi tempus imperdiet nulla malesuada.</p>
+        </div>
+    </div>
+    <section class="min-vh-100" style="background-color: #eee;">
+        <div class="text-center container py-5" id="items-container">
+            <h4 class="mt-4 mb-5"><strong>Products related to this item
+                </strong></h4>
+            <div id="items"></div>
+        </div>
+    </section>
+    <script>
+        document.getElementById('item-name').innerText = sessionStorage.getItem('itemName')
+        document.getElementById('item-price').innerText = sessionStorage.getItem('itemPrice')
+
+        var counter = 0;
+        function addToCart() {
+            counter++
+            document.getElementById('counter').innerText = counter
+        }
+
+        fetch(`http://127.0.0.1:8000/apriori/items/${sessionStorage.getItem('itemName')}/`).then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+            .then(data => {
+                console.log(data)
+                // console.log(data['results'][0].name) 
+                let results = data
+
+                let items_container = document.getElementById('items-container')
+                let items = document.getElementById('items')
+
+                // if (items !== null) items_container.removeChild(items)
+                // items = document.createElement('div')
+                // items.id = 'items'
+
+                results.forEach(item => {
+                    let img = document.createElement('img')
+                    img.className = 'w-100'
+                    img.src = 'img/item.png'
+
+                    let elm3_1 = document.createElement('div')
+                    // elm3_1.className = 'bg-image hover-zoom ripple ripple-surface ripple-surface-light'
+                    elm3_1.setAttribute('data-mdb-ripple-color', 'light')
+                    elm3_1.appendChild(img)
+
+                    // let details = document.createElement('a')
+                    // // details.href = ''
+                    // details.innerText = item.name
+                    // details.className = 'text-reset'
+
+                    let productName = document.createElement('h6')
+                    productName.className = 'card-title mb-3'
+                    productName.innerText = item.name
+                    // productName.appendChild(details)
+
+                    let productPrice = document.createElement('h6')
+                    productPrice.className = 'mb-3'
+                    productPrice.innerText = `$${item.price}`
+                    productPrice.style.color = 'green'
+
+                    let card_body = document.createElement('div')
+                    card_body.className = 'card-body'
+                    card_body.append(productName, productPrice)
+
+                    let card = document.createElement('div')
+                    card.className = 'card'
+                    card.setAttribute('itemName', item.name)
+                    card.setAttribute('itemPrice', item.price)
+                    card.append(elm3_1, card_body)
+                    card.addEventListener('click', function (e) {
+                        sessionStorage.setItem('itemName', this.getAttribute('itemname'))
+                        sessionStorage.setItem('itemPrice', this.getAttribute('itemprice'))
+                        console.log(sessionStorage.getItem('itemName'), sessionStorage.getItem('itemPrice'))
+                        open('item.html', '_blank')
+                    })
+
+                    let elm1 = document.createElement('div')
+                    elm1.className = 'col-lg-4 col-md-12 mb-4'
+                    elm1.appendChild(card)
+
+                    items.appendChild(elm1)
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+
+</html>

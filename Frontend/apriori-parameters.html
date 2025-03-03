@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apriori Parameters</title>
+    <link rel="stylesheet" href="bootstrap-5.3.3-dist/css/bootstrap.min.css">
+    <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body class="d-flex flex-column mb-3 align-items-center justify-content-center vh-100">
+    <h1 style="margin-bottom: 50px;">Set Apriori Parameters</h1>
+    <div class="mb-3 row"><label for="min-support" class="form-label">Minimum Support</label>
+        <input type="number" name="min-support" id="min-support" step="0.01" class="form-control">
+    </div>
+    <div class="mb-3 row"><label for="metric" class="form-label">Metric</label>
+        <select name="metric-name" id="metric-name" class="form-select">
+            <option value="confidence">Confidence</option>
+            <option value="lift">Lift</option>
+        </select>
+    </div>
+    <div class="mb-3 row"><label for="metric-min-value"  class="form-label">Minimum <span id="metric"></span></label>
+        <input type="number" name="metric-min-value" id="metric-min-value" step="0.1" class="form-control">
+    </div>
+    <div class="mb-3">
+        <button onclick="setParameters()" class="btn btn-primary">Submit</button>
+    </div>
+
+    <script>
+        let select = document.getElementById('metric-name')
+        select.addEventListener('change', function () {
+            document.getElementById('metric').innerText = select.value
+        })
+
+        function setParameters() {
+            let min_sup = document.getElementById('min-support').value
+            let metric_name = document.getElementById('metric-name').value
+            let metric_min_sup = document.getElementById('metric-min-value').value
+
+            fetch(`http://127.0.0.1:8000/apriori/metrics/${min_sup}/${metric_name}/${metric_min_sup}/`, {
+                method: "POST",
+                mode: "cors",
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // return response.json();
+            })
+                .then(data => {
+                    open('items.html', '_self')
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+
+</html>
