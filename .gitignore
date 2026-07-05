@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environment / secrets (once SECRET_KEY and DB credentials move out of settings.py)
+.env
+
+# Editor/OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Others
+requirements_.txt
+project_tree.txt
+Pipfile
+Pipfile.lock
+
+# NOTE: static/**/pickles/*.pkl and KNNAPI/test/dataset.csv are intentionally
+# NOT ignored — they are read at request time by AprioriAPI and KNNAPI views
+# and the app will not function without them.
