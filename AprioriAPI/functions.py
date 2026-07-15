@@ -1,12 +1,14 @@
 
 import pandas as pd
+from django.conf import settings
 
 
 def get_related_items(item, queryset):
-        
+
         # Load association rules
-        rules = pd.read_pickle("Backend/AprioriAPI/static/AprioriAPI/CSVs/pickles/association_rules2")
-    
+        rules_path = settings.BASE_DIR / "AprioriAPI" / "static" / "AprioriAPI" / "CSVs" / "pickles" / "association_rules2"
+        rules = pd.read_pickle(rules_path)
+
         # Find the consequents
         consequents = rules[rules['antecedents']
                                     .apply(lambda x: 

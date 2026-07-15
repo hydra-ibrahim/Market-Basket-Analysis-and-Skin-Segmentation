@@ -1,4 +1,4 @@
-
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -15,9 +15,9 @@ class KNNView(APIView):
     def get(self, request, R, G, B):
 
         # Load the KNN model
-        knn = jl.load('Backend/KNNAPI/static/KNNAPI/pickles/KNN2.pkl')
+        knn = jl.load(settings.BASE_DIR / "KNNAPI" / "static" / "KNNAPI" / "pickles" / "KNN2.pkl")
 
-        data = pd.read_csv('Backend/KNNAPI/test/dataset.csv')
+        data = pd.read_csv(settings.BASE_DIR / "KNNAPI" / "test" / "dataset.csv")
         
         X = data.drop('y', axis=1)
         y = data['y']
@@ -26,7 +26,7 @@ class KNNView(APIView):
         X = scaler.fit_transform(X)
 
         # Convert the url parameters to a DataFrame
-        d = pd.DataFrame({'B':[R],'G':[G],'R':[B]})
+        d = pd.DataFrame({'B':[B],'G':[G],'R':[R]})
 
         # Scale the DataFrame
         sample = scaler.transform(d)
@@ -42,7 +42,7 @@ class KNNView(APIView):
     # Adjusts model parameter
     def post(self, request, k):
 
-        data = pd.read_csv('Backend/KNNAPI/test/dataset.csv')
+        data = pd.read_csv(settings.BASE_DIR / "KNNAPI" / "test" / "dataset.csv")
         
         X = data.drop('y', axis=1)
         y = data['y']
@@ -60,6 +60,6 @@ class KNNView(APIView):
         knn.fit(X_train, y_train)
 
         # Save the model
-        jl.dump(knn, 'Backend/KNNAPI/static/KNNAPI/pickles/KNN2.pkl')
+        jl.dump(knn, settings.BASE_DIR / "KNNAPI" / "static" / "KNNAPI" / "pickles" / "KNN2.pkl")
 
         return Response(status=status.HTTP_201_CREATED)

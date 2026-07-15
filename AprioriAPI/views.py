@@ -1,4 +1,5 @@
 
+from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework.response import Response
@@ -41,9 +42,12 @@ class ItemViewSet(ReadOnlyModelViewSet):
 class AprioriView(APIView):
      
     def post(self, request, min_support, metric_name, metric_min_value):
-        
+
+        csv_dir = settings.BASE_DIR / "AprioriAPI" / "static" / "AprioriAPI" / "CSVs"
+
         # Building the model 
-        basket_UK = pd.read_csv("Backend/AprioriAPI/static/AprioriAPI/CSVs/UK_Transactions.csv", delimiter=';', index_col="BillNo")
+        basket_UK = pd.read_csv(csv_dir / "UK_Transactions.csv",
+                                 delimiter=';', index_col="BillNo")
         frq_items = apriori(basket_UK, min_support = min_support, use_colnames = True, low_memory=True)
 
         # Collecting the inferred rules in a dataframe 
@@ -61,6 +65,6 @@ class AprioriView(APIView):
         rules = rules.sort_values(['confidence', 'lift'], ascending = [False, False])
 
         # Save the rules
-        rules.to_pickle("Backend/AprioriAPI/static/AprioriAPI/CSVs/pickles/association_rules2")
+        rules.to_pickle(csv_dir / "pickles" / "association_rules2")
 
         return Response(status=status.HTTP_200_OK)
