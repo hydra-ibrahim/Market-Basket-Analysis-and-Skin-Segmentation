@@ -1,0 +1,26 @@
+# Raw full-resolution transaction data — intentionally not published (see README > Known limitations)
+AprioriAPI/static/AprioriAPI/CSVs/UK_Transactions.csv
+AprioriAPI/static/AprioriAPI/CSVs/UK_Transactions.csv.gz
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Django
+db.sqlite3
+staticfiles/
+
+# Env vars — never commit real secrets
+.env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Commit message text file
+message.txt
