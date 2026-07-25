@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +22,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'SECRET'
+# Set a real SECRET_KEY env var on your host. Falls back to a dev-only key locally.
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-only-do-not-use-in-prod')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Defaults to False (safe); set DEBUG=True locally in your own environment if you want it.
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+# Comma-separated list of allowed hosts, e.g. "your-app.onrender.com,127.0.0.1"
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
+
+# Live "tune the model" endpoints write a shared model file with no per-user isolation, which is fine for a
+# single local user but breaks (or, for Apriori, needs data that's deliberately not shipped — see README) in
+# a shared public deployment. Default to enabled so local/offline use gets full functionality out of the box;
+# explicitly set both to 'False' in the deployed environment's env vars.
+KNN_TUNING_ENABLED = os.environ.get('KNN_TUNING_ENABLED', 'True') == 'True'
+APRIORI_TUNING_ENABLED = os.environ.get('APRIORI_TUNING_ENABLED', 'True') == 'True'
 
 
 # Application definition
@@ -46,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -80,14 +93,12 @@ WSGI_APPLICATION = 'Analyze.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Market',
-        'USER': 'root',
-        'PASSWORD': 'SECRET',
-        'HOST':'localhost',
-        'PORT':'3306',
-    }
+    'default': dj_database_url.config(
+        # Falls back to local SQLite if DATABASE_URL isn't set, so this still runs
+        # out of the box on your own machine without installing Postgres locally.
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 
@@ -126,6 +137,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -152,6 +169,16 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 
+    # No accounts/auth in this project, so everyone is "anonymous" — this just caps requests per IP,
+    # mainly so the free-tier deployment can't be trivially flooded. Doesn't apply to local/offline use
+    # in any way that matters (you're the only one hitting your own machine).
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/minute',
+    },
+
 }
 
-CORS_ALLOWED_ORIGINS = ['null']
+CORS_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'null').split(',') if o.strip()]

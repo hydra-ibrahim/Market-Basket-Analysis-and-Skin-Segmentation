@@ -42,6 +42,15 @@ class KNNView(APIView):
     # Adjusts model parameter
     def post(self, request, k):
 
+        if not settings.KNN_TUNING_ENABLED:
+            return Response(
+                {"detail": "Live tuning is disabled on this deployment: the retrained model is shared "
+                            "across all visitors with no per-user isolation, so one visitor's chosen k "
+                            "would silently affect everyone else's classification results. Clone the "
+                            "repo and run it locally to use this endpoint."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         data = pd.read_csv(settings.BASE_DIR / "KNNAPI" / "test" / "dataset.csv")
         
         X = data.drop('y', axis=1)

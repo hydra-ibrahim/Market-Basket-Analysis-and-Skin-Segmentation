@@ -43,10 +43,19 @@ class AprioriView(APIView):
      
     def post(self, request, min_support, metric_name, metric_min_value):
 
+        if not settings.APRIORI_TUNING_ENABLED:
+            return Response(
+                {"detail": "Live re-fitting is disabled on this deployment: it needs the raw transaction "
+                            "data, which isn't published here (see README > Known limitations). Clone the "
+                            "repo, supply your own copy of the dataset, and run it locally to use this "
+                            "endpoint."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         csv_dir = settings.BASE_DIR / "AprioriAPI" / "static" / "AprioriAPI" / "CSVs"
 
         # Building the model 
-        basket_UK = pd.read_csv(csv_dir / "UK_Transactions.csv",
+        basket_UK = pd.read_csv(csv_dir / "UK_Transactions.csv.gz",
                                  delimiter=';', index_col="BillNo")
         frq_items = apriori(basket_UK, min_support = min_support, use_colnames = True, low_memory=True)
 

@@ -35,7 +35,7 @@ document.getElementById('fileInput').addEventListener('change', function (event)
 });
 
 function getTheResult(R, G, B) {
-    fetch(`http://127.0.0.1:8000/knn/image/${R}/${G}/${B}/`).then(response => {
+    fetch(`${API_BASE_URL}/knn/image/${R}/${G}/${B}/`).then(response => {
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }

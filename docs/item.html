@@ -15,6 +15,7 @@
         }
     </style>
     <script src="bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
 </head>
 
 <body>
@@ -122,7 +123,7 @@
             document.getElementById('counter').innerText = counter
         }
 
-        fetch(`http://127.0.0.1:8000/apriori/items/${sessionStorage.getItem('itemName')}/`).then(response => {
+        fetch(`${API_BASE_URL}/apriori/items/${sessionStorage.getItem('itemName')}/`).then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }

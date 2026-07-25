@@ -48,8 +48,11 @@ An earlier version of `KNNView.get()` had a channel-mapping bug: incoming red an
 ├── KNNAPI/               # Skin Segmentation app
 │   ├── urls.py
 │   └── views.py          # KNNView (predict / re-fit classifier)
-├── Frontend/             # Static HTML/JS pages (Bootstrap + vanilla JS, fetch-based)
-├── docs/
+├── docs/                 # Static HTML/JS pages (Bootstrap + vanilla JS, fetch-based) — doubles as the
+│   │                     # GitHub Pages source, see DEPLOY.md; also holds k_selection_plot.png below
+│   ├── index.html        # landing page linking to both demos
+│   ├── image.html        # skin-pixel classifier demo
+│   ├── items.html        # related-products demo
 │   └── k_selection_plot.png   # cross-validation accuracy plot, referenced from the README
 ├── manage.py
 ├── requirements.txt
@@ -59,26 +62,43 @@ An earlier version of `KNNView.get()` had a channel-mapping bug: incoming red an
 
 ## Setup
 
+This is the same codebase used both for running locally and for the deployed version — there's no separate
+"deploy" copy. `Analyze/settings.py` reads `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `DATABASE_URL` from
+environment variables, and falls back to sensible local defaults (including a local SQLite file) when
+they're unset, so the steps below work with zero extra setup.
+
 1. Install dependencies:
    ```
    pip install -r requirements.txt
    ```
-2. Create a MySQL database matching `Analyze/settings.py`, and set `SECRET_KEY` and the database credentials via environment variables rather than the placeholder values in the settings file.
-3. Run migrations:
+2. Run migrations (creates `db.sqlite3` locally, since no `DATABASE_URL` is set):
    ```
    python manage.py migrate
    ```
-4. Load the `items` table — it's unmanaged (see `AprioriAPI/models.py`), so `migrate` doesn't create it:
+3. Load the `items` table — it's unmanaged (see `AprioriAPI/models.py`), so `migrate` doesn't create it:
    ```
-   mysql -u <username> -p <database_name> < items.sql
+   sqlite3 db.sqlite3 < items_postgres.sql
    ```
-5. Start the development server:
+   (Despite the name, `items_postgres.sql` is plain ANSI SQL — no MySQL backticks or Postgres-only syntax —
+   so it loads the same way into SQLite. If you'd rather run a real MySQL or Postgres server locally instead
+   of SQLite, set `DATABASE_URL` accordingly — e.g. `mysql://user:pass@localhost:3306/Market` — and use
+   `items.sql` or `items_postgres.sql` respectively.)
+4. Start the development server:
    ```
    python manage.py runserver
    ```
-6. Open any page under `Frontend/` in a browser — the pages call the API directly at `http://127.0.0.1:8000`.
+5. Open `docs/index.html` in a browser — the pages call the API at whatever `API_BASE_URL` is set to in
+   `docs/js/config.js` (`http://127.0.0.1:8000` by default, matching step 4).
+
+For hosting `docs/` publicly (e.g. GitHub Pages) so reviewers can try it with one click, see `DEPLOY.md`.
+
+For deploying this same repo to Render, see `DEPLOY.md`.
 
 ## API reference
+
+All endpoints below are throttled to 60 requests/minute per IP (`AnonRateThrottle` — there's no auth system,
+so every caller is "anonymous"); exceeding it returns `429 Too Many Requests`. Mainly relevant for the public
+deployment; irrelevant in practice for local/offline use.
 
 ### Apriori / Market Basket Analysis
 
@@ -272,9 +292,22 @@ Removing an item as a post-hoc filter instead of rebuilding the basket isn't qui
 
 ## Known limitations
 
-- `CORS_ALLOWED_ORIGINS` is set to `['null']`, which only permits requests from `file://` origins — sufficient for opening the static frontend pages directly, but will need updating for any other deployment.
+- `CORS_ALLOWED_ORIGINS` defaults to `['null']` (configurable via env var — see `DEPLOY.md`), which only permits requests from `file://` origins — sufficient for opening the static frontend pages directly, but will need setting explicitly for any other deployment.
 - The `StandardScaler` used for k-NN prediction is refit on the full dataset on every request rather than persisted alongside the trained model.
-- `AprioriView`'s re-fit endpoint (`POST /apriori/metrics/.../`) reads `UK_Transactions.csv` — the hot-encoded UK invoice basket matrix — which isn't included in this repository. Unlike `items.sql` and `rules.csv`, this file preserves every invoice at full original resolution (one row per real transaction, no aggregation), which sits closer to redistributing the licensed dataset itself than to a genuinely transformed derivative, so it isn't published here. The code to regenerate it from a legitimately-obtained copy of the raw export is in [Association rules](#association-rules); the re-fit endpoint won't function without it.
+- Both `POST /knn/parameter/<k>/` and `AprioriView`'s re-fit endpoint (`POST /apriori/metrics/.../`) write a
+  single shared model/rules file on disk with no per-user or per-session isolation — fine for one local
+  user, but in a deployment with multiple simultaneous visitors, one visitor's chosen parameters would
+  silently change what every other visitor sees next. `AprioriView`'s endpoint additionally reads
+  `UK_Transactions.csv` — the hot-encoded UK invoice basket matrix — which isn't included in this
+  repository. Unlike `items.sql` and `rules.csv`, this file preserves every invoice at full original
+  resolution (one row per real transaction, no aggregation), which sits closer to redistributing the
+  licensed dataset itself than to a genuinely transformed derivative, so it isn't published here; the code
+  to regenerate it from a legitimately-obtained copy of the raw export is in
+  [Association rules](#association-rules).
+- Because of the above, both endpoints are gated behind `KNN_TUNING_ENABLED` / `APRIORI_TUNING_ENABLED`
+  settings (env vars, default `True`) and return a `503` with an explanation when turned off, rather than
+  behaving incorrectly or crashing. They're switched off on the public deployment and work normally for
+  local/offline use — see `DEPLOY.md`.
 
 ## References
 
