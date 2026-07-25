@@ -1,6 +1,6 @@
 # Deploying to Render
 
-Changes made to this copy of the project to make it deployable (see chat for the full explanation):
+Changes made to this copy of the project to make it deployable:
 
 - `Analyze/settings.py`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `CORS_ALLOWED_ORIGINS` now read from
   environment variables instead of being hardcoded. `DATABASES` now uses `dj_database_url`, reading a
