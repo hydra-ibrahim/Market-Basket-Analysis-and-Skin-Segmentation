@@ -1,6 +1,6 @@
 # Deploying to Render
 
-Changes made to this copy of the project to make it deployable:
+Changes made to this copy of the project to make it deployable (see chat for the full explanation):
 
 - `Analyze/settings.py`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `CORS_ALLOWED_ORIGINS` now read from
   environment variables instead of being hardcoded. `DATABASES` now uses `dj_database_url`, reading a
@@ -18,7 +18,9 @@ Changes made to this copy of the project to make it deployable:
   static pages through Jekyll processing unnecessarily.
 - The hardcoded `http://127.0.0.1:8000` wasn't just in `test.js` — `item.html`, `items.html`,
   `knn-parameters.html`, and `apriori-parameters.html` each had their own separate copy. All four now read
-  from one new file, `docs/js/config.js` — update the URL in that one place once deployed, instead of four.
+  from one new file, `docs/js/config.js`, which auto-detects local vs. hosted viewing and picks the right
+  backend — a local clone always talks to your local `runserver`, the public copy always talks to your
+  deployed backend, nothing to toggle either way (see step 8 below for the one value that does need setting).
 - Added DRF request throttling (`AnonRateThrottle`) so the free-tier instance can't be trivially flooded —
   see the settings.py `REST_FRAMEWORK` block.
 - Added `.gitignore`, so the raw transactions CSV (raw and gzipped) never gets pushed to GitHub, matching
@@ -44,6 +46,14 @@ Changes made to this copy of the project to make it deployable:
    - Instance type: Free
 
 5. **Set environment variables** on the web service (Environment tab):
+   - `PYTHON_VERSION` — `3.12.7`. A `.python-version` file in the repo root also pins this (Render reads it
+     as a fallback if this env var is ever removed), but the env var takes precedence and must be fully
+     qualified with a patch version, so set it explicitly here too. Without either, Render defaults to its
+     own current newest Python — as of mid-2026 that's 3.14.x — for which several pinned packages here
+     (`pandas==2.2.2`, `numpy==1.26.4`, `scikit-learn==1.4.2`) predate any pre-built wheel. pip then falls
+     back to compiling them from source and fails (a C++ error inside pandas' Cython-generated code,
+     incompatible with newer compilers). 3.12 is safely inside every one of these packages' wheel coverage
+     from when they were released.
    - `SECRET_KEY` — generate one, e.g. run `python -c "import secrets; print(secrets.token_urlsafe(50))"` locally
    - `DEBUG` — `False`
    - `DATABASE_URL` — the Internal Database URL from step 3
@@ -58,13 +68,29 @@ Changes made to this copy of the project to make it deployable:
 6. **Deploy.** Render will build and start the service automatically on push.
 
 7. **Load the `items` table** (one-time, after the first successful deploy — this table is `managed=False`
-   so Django migrations won't create it). From your own machine, using the **External Database URL**
-   Render shows you:
+   so Django migrations won't create it).
+
+   If you don't have `psql` (the Postgres command-line client) locally yet:
+   - **Mac**: `brew install postgresql@17` (Homebrew)
+   - **Windows**: `winget install PostgreSQL.PostgreSQL.18`
+   - **Linux**: `sudo apt install postgresql-client` (Debian/Ubuntu) or your distro's equivalent
+
+   Then, on your own machine: open your Postgres instance in the Render dashboard, scroll to
+   **Connections**, and copy the **PSQL Command** shown there directly — it already has your credentials
+   filled in, so there's no need to assemble the URL by hand. In a terminal, `cd` into this project folder
+   (so `items_postgres.sql` is in your current directory), paste that command, and add `-f items_postgres.sql`
+   to the end before running it, e.g.:
    ```
-   psql "<external-database-url-from-render>" -f items_postgres.sql
+   psql postgres://user:pass@host/dbname -f items_postgres.sql
    ```
 
-8. **Update `docs/js/config.js`**: change `API_BASE_URL` to `https://your-app-name.onrender.com`.
+8. **Point `docs/js/config.js` at your backend**: it's the second half of the ternary — the value used
+   whenever the page isn't being viewed locally:
+```js
+   ) ? 'http://127.0.0.1:8000' : '--> edit this one to your Render URL <--';
+```
+   Only affects the hosted/GitHub Pages copy — local use auto-detects and keeps pointing at
+   `127.0.0.1:8000` regardless, so there's nothing to remember to switch back before running locally again.
 
 ## Hosting the frontend on GitHub Pages
 

@@ -62,6 +62,13 @@ An earlier version of `KNNView.get()` had a channel-mapping bug: incoming red an
 
 ## Setup
 
+**Requires Python 3.12** (a `.python-version` file in the repo root pins this for tools that read it, e.g.
+`pyenv`). Several dependencies here are pinned to 2024-era versions (`pandas==2.2.2`, `numpy==1.26.4`,
+`scikit-learn==1.4.2`) with no pre-built wheel for newer Python releases — installing on, say, Python 3.14
+falls back to compiling from source and fails outright (a C++ compilation error inside pandas' generated
+code). This isn't specific to any one deployment platform; it'll happen in any environment on a too-new
+interpreter.
+
 This is the same codebase used both for running locally and for the deployed version — there's no separate
 "deploy" copy. `Analyze/settings.py` reads `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `DATABASE_URL` from
 environment variables, and falls back to sensible local defaults (including a local SQLite file) when
@@ -87,8 +94,10 @@ they're unset, so the steps below work with zero extra setup.
    ```
    python manage.py runserver
    ```
-5. Open `docs/index.html` in a browser — the pages call the API at whatever `API_BASE_URL` is set to in
-   `docs/js/config.js` (`http://127.0.0.1:8000` by default, matching step 4).
+5. Open `docs/index.html` in a browser — `docs/js/config.js` detects that it's being viewed locally
+   (`file://` or `localhost`/`127.0.0.1`) and points the pages at `http://127.0.0.1:8000` automatically,
+   matching step 4. No setting to check or reset — it stays this way regardless of what the same file is
+   configured to use for the publicly hosted copy.
 
 For hosting `docs/` publicly (e.g. GitHub Pages) so reviewers can try it with one click, see `DEPLOY.md`.
 
