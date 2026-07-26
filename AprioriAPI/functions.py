@@ -20,16 +20,18 @@ def get_related_items(item, queryset):
 
         
         # Get the consequents info
-        related_items = queryset.filter(name__in=consequents)
+        related_names = list(consequents)
 
-        # If the "consequents" number is less than ten items, 
+        # If the "consequents" number is less than ten items,
         # complete the recommended items to be ten by the most bought items
-        if len(consequents) < 10 : 
+        if len(related_names) < 10:
 
-            complementary_num = 10 - len(consequents)
-            comp_related_items = queryset.order_by('-quantity')[:complementary_num]
+            complementary_num = 10 - len(related_names)
+            comp_names = list(
+                queryset.exclude(name__in=related_names)
+                        .order_by('-quantity')
+                        .values_list('name', flat=True)[:complementary_num]
+            )
+            related_names += comp_names
 
-            related_items = related_items.union(comp_related_items)
-
-
-        return related_items
+        return queryset.filter(name__in=related_names)

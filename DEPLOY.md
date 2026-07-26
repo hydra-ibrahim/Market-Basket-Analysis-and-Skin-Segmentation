@@ -1,6 +1,6 @@
 # Deploying to Render
 
-Changes made to this copy of the project to make it deployable (see chat for the full explanation):
+Changes made to this copy of the project to make it deployable:
 
 - `Analyze/settings.py`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `CORS_ALLOWED_ORIGINS` now read from
   environment variables instead of being hardcoded. `DATABASES` now uses `dj_database_url`, reading a
@@ -9,6 +9,16 @@ Changes made to this copy of the project to make it deployable (see chat for the
   mistyped manual value doesn't cause Django to reject every single request with a blanket 400 (this
   happened on the first real deploy -- a missing/wrong `ALLOWED_HOSTS` produces a generic, identical-looking
   400 across completely unrelated endpoints, since the rejection happens before any view code runs).
+- `AprioriAPI/functions.py`'s `get_related_items()` combined two querysets with `.union()`, one of them
+  sliced and ordered -- works fine on MySQL/SQLite, but is a well-documented spot where PostgreSQL is
+  considerably stricter about what SQL a combined `UNION` query can contain, and threw a real database
+  error on the second real deploy (500, `/apriori/items/<name>/`, right after the `ALLOWED_HOSTS` fix
+  resolved the first issue). Rewritten to combine the two sets of item names in Python and do one plain
+  `.filter()` at the end -- avoids `UNION` entirely, so nothing database-specific to trip over. As a side
+  effect this is also slightly more correct than before: the padding query now explicitly excludes names
+  already selected, guaranteeing exactly enough new items to reach 10 total, rather than relying on
+  `UNION`'s deduplication after the fact (which could under-deliver if a top-seller happened to already be
+  a consequent).
 - Added `whitenoise` for static file serving in production, and a `STATIC_ROOT` for `collectstatic`.
 - `requirements.txt` re-saved as UTF-8 (it was UTF-16, which breaks `pip install` on Linux hosts) and
   `mysqlclient` swapped for `psycopg2-binary` (Postgres) + added `gunicorn`, `whitenoise`, `dj-database-url`.
