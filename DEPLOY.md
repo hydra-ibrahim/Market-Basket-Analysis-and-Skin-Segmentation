@@ -5,6 +5,10 @@ Changes made to this copy of the project to make it deployable (see chat for the
 - `Analyze/settings.py`: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and `CORS_ALLOWED_ORIGINS` now read from
   environment variables instead of being hardcoded. `DATABASES` now uses `dj_database_url`, reading a
   `DATABASE_URL` env var (falls back to local SQLite if that var isn't set, so nothing changes for local dev).
+  `ALLOWED_HOSTS` also auto-includes Render's own `RENDER_EXTERNAL_HOSTNAME` env var, so a forgotten or
+  mistyped manual value doesn't cause Django to reject every single request with a blanket 400 (this
+  happened on the first real deploy -- a missing/wrong `ALLOWED_HOSTS` produces a generic, identical-looking
+  400 across completely unrelated endpoints, since the rejection happens before any view code runs).
 - Added `whitenoise` for static file serving in production, and a `STATIC_ROOT` for `collectstatic`.
 - `requirements.txt` re-saved as UTF-8 (it was UTF-16, which breaks `pip install` on Linux hosts) and
   `mysqlclient` swapped for `psycopg2-binary` (Postgres) + added `gunicorn`, `whitenoise`, `dj-database-url`.
@@ -57,8 +61,9 @@ Changes made to this copy of the project to make it deployable (see chat for the
    - `SECRET_KEY` — generate one, e.g. run `python -c "import secrets; print(secrets.token_urlsafe(50))"` locally
    - `DEBUG` — `False`
    - `DATABASE_URL` — the Internal Database URL from step 3
-   - `ALLOWED_HOSTS` — `your-app-name.onrender.com` (Render shows you the exact URL once created; you
-     can add it after the first deploy and redeploy)
+   - `ALLOWED_HOSTS` — optional now: `settings.py` auto-includes Render's own `RENDER_EXTERNAL_HOSTNAME`,
+     so the default `.onrender.com` domain works even if this is never set. Still set it manually if you
+     add a custom domain later (Render won't know about that one on its own).
    - `CORS_ALLOWED_ORIGINS` — if hosting `docs/` on GitHub Pages (see below), set this to
      `https://your-github-username.github.io` exactly — no trailing slash, no path. Otherwise leave as the
      default (`null`), which only permits opening the pages locally via `file://`.
@@ -77,18 +82,22 @@ Changes made to this copy of the project to make it deployable (see chat for the
 
    Then, on your own machine: open your Postgres instance in the Render dashboard, scroll to
    **Connections**, and copy the **PSQL Command** shown there directly — it already has your credentials
-   filled in, so there's no need to assemble the URL by hand. In a terminal, `cd` into this project folder
-   (so `items_postgres.sql` is in your current directory), paste that command, and add `-f items_postgres.sql`
-   to the end before running it, e.g.:
+   filled in, so there's no need to assemble the URL by hand. Render's own command comes as a
+   keyword/value connection string, not a `postgres://` URL, e.g.:
    ```
-   psql postgres://user:pass@host/dbname -f items_postgres.sql
+   psql "host=xxxx.oregon-postgres.render.com port=5432 dbname=your_db user=your_user sslmode=require"
    ```
+   In a terminal, `cd` into this project folder (so `items_postgres.sql` is in your current directory),
+   paste that command, and add `-f items_postgres.sql` to the end before running it. You'll be prompted for
+   the password shown alongside the same PSQL Command in the dashboard. Successful output is `CREATE TABLE`
+   followed by a series of `INSERT 0 <n>` lines (the file batches inserts in groups of 500) — the counts
+   should sum to 3,981.
 
 8. **Point `docs/js/config.js` at your backend**: it's the second half of the ternary — the value used
    whenever the page isn't being viewed locally:
-```js
+   ```js
    ) ? 'http://127.0.0.1:8000' : '--> edit this one to your Render URL <--';
-```
+   ```
    Only affects the hosted/GitHub Pages copy — local use auto-detects and keeps pointing at
    `127.0.0.1:8000` regardless, so there's nothing to remember to switch back before running locally again.
 
@@ -105,9 +114,14 @@ This lets you hand a reviewer one link instead of asking them to clone and run a
    take effect.
 4. Update `docs/index.html`: the "GitHub" link near the top is a placeholder (`href="https://github.com/"`)
    — point it at your actual repo URL.
-5. Give out the Pages URL from step 2 — `index.html` links to both demos from there. Skip linking
-   `item.html` directly: it expects `items.html` to have set some page state first (which item was
-   clicked), so opened cold it'll just show a blank result.
+5. Make the URL from step 2 actually discoverable: on the repo's homepage, click the gear icon next to
+   **About** (top-right, above the file list) and paste it into the **Website** field. That's what puts a
+   clickable link at the top of the repo page — the one spot anyone landing there sees without scrolling
+   or knowing to check `README.md` or Settings. Also add the same link near the top of `README.md` (a
+   "Live demo" line works well) as a second, harder-to-miss path for anyone who does scroll straight to
+   the README. `index.html` links to both demos from there. Skip linking `item.html` directly: it expects
+   `items.html` to have set some page state first (which item was clicked), so opened cold it'll just show
+   a blank result.
 
 ## About the disabled tuning endpoints
 

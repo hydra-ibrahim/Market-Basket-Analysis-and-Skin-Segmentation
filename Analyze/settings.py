@@ -32,6 +32,13 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 # Comma-separated list of allowed hosts, e.g. "your-app.onrender.com,127.0.0.1"
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 
+# Render automatically injects this with the service's real hostname -- add it even if the manual
+# ALLOWED_HOSTS env var above was never set, forgotten, or mistyped, since that's the classic cause of a
+# blanket 400 on every single request (Django rejects the Host header before any view code runs).
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 # Live "tune the model" endpoints write a shared model file with no per-user isolation, which is fine for a
 # single local user but breaks (or, for Apriori, needs data that's deliberately not shipped — see README) in
 # a shared public deployment. Default to enabled so local/offline use gets full functionality out of the box;

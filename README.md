@@ -4,6 +4,14 @@ A Django REST API combining two independent machine learning pipelines: an Aprio
 
 Built as my course project (Information Systems Engineering) in Informatics Engineering at Tishreen University, 2024. All design, implementation, and analysis in this repository is my own work.
 
+## Try it online
+
+The application is publicly available through GitHub Pages:
+
+**https://hydra-ibrahim.github.io/Market-Basket-Analysis-and-Skin-Segmentation/**
+
+The landing page provides access to both the Market Basket Analysis and Skin Segmentation demos.
+
 ## Contents
 
 - [Overview](#overview)
