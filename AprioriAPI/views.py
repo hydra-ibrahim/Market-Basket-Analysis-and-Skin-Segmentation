@@ -8,8 +8,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import Item
 from .serializers import ItemSerializer
-from .functions import get_related_items
+from .functions import get_related_items, build_consequents_map
 
+import json
 import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules 
 
@@ -73,7 +74,11 @@ class AprioriView(APIView):
         # Sort the rules in descending order by confidence first and lift second
         rules = rules.sort_values(['confidence', 'lift'], ascending = [False, False])
 
-        # Save the rules
+        # Save the rules -- the full pickle (all metrics, useful for inspecting the actual mined rules)
+        # and the lightweight JSON map get_related_items() actually reads at request time. Both must be
+        # regenerated together or local retraining would silently stop affecting query results.
         rules.to_pickle(csv_dir / "pickles" / "association_rules2")
+        with open(csv_dir / "pickles" / "consequents_map.json", 'w', encoding='utf-8') as f:
+            json.dump(build_consequents_map(rules), f, ensure_ascii=False)
 
         return Response(status=status.HTTP_200_OK)

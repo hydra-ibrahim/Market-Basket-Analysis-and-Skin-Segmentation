@@ -1,24 +1,35 @@
 
+import json
 import pandas as pd
 from django.conf import settings
 
 
+def build_consequents_map(rules):
+        """Precompute {single-item antecedent: [consequent items]} from a mined rules DataFrame.
+        This is the only shape get_related_items() actually needs -- turning a per-request DataFrame
+        scan into an O(1) dict lookup, and just as importantly, removing any dependency on unpickling
+        pandas/numpy objects at request time, which is fragile across library versions (a committed
+        pickle created by one numpy version can fail to load under another -- see DEPLOY.md)."""
+
+        single_antecedent = rules[rules['antecedents'].apply(lambda x: len(x) == 1)].copy()
+        single_antecedent['antecedent_item'] = single_antecedent['antecedents'].apply(lambda x: next(iter(x)))
+
+        return {
+            item: group['consequents'].explode().unique().tolist()
+            for item, group in single_antecedent.groupby('antecedent_item')
+        }
+
+
 def get_related_items(item, queryset):
 
-        # Load association rules
-        rules_path = settings.BASE_DIR / "AprioriAPI" / "static" / "AprioriAPI" / "CSVs" / "pickles" / "association_rules2"
-        rules = pd.read_pickle(rules_path)
+        # Load the precomputed {item: [consequents]} map -- plain JSON, no pandas/numpy involved in
+        # reading it, so nothing here can go version-stale the way the old pickle-based approach did.
+        map_path = settings.BASE_DIR / "AprioriAPI" / "static" / "AprioriAPI" / "CSVs" / "pickles" / "consequents_map.json"
+        with open(map_path, encoding='utf-8') as f:
+            consequents_map = json.load(f)
 
-        # Find the consequents
-        consequents = rules[rules['antecedents']
-                                    .apply(lambda x: 
-                                        (item in x) and (len(list(x)) == 1)
-                                        )
-                            ][['consequents']]                                                            \
-                            .explode('consequents')                                                        \
-                            .consequents.unique().tolist()
+        consequents = consequents_map.get(item, [])
 
-        
         # Get the consequents info
         related_names = list(consequents)
 
