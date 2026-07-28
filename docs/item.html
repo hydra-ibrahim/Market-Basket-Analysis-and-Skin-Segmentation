@@ -119,7 +119,9 @@
         const itemPrice = urlParams.get('price')
 
         document.getElementById('item-name').innerText = itemName
-        document.getElementById('item-price').innerText = itemPrice
+        itemPriceElement = document.getElementById('item-price')
+        itemPriceElement.innerText = `$${itemPrice}`
+        itemPriceElement.style.color = 'green'
 
         var counter = 0;
         function addToCart() {
