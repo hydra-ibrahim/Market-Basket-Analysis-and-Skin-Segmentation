@@ -182,10 +182,9 @@
                     card.setAttribute('itemPrice', item.price)
                     card.append(elm3_1, card_body)
                     card.addEventListener('click', function (e) {
-                        sessionStorage.setItem('itemName', this.getAttribute('itemname'))
-                        sessionStorage.setItem('itemPrice', this.getAttribute('itemprice'))
-                        // console.log(sessionStorage.getItem('itemName'), sessionStorage.getItem('itemPrice'))
-                        open('item.html', '_blank')
+                        const name = this.getAttribute('itemname')
+                        const price = this.getAttribute('itemprice')
+                        open(`item.html?name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`, '_blank')
                     })
 
                     let elm1 = document.createElement('div')

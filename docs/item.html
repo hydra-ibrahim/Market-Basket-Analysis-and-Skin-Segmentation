@@ -114,8 +114,12 @@
         </div>
     </section>
     <script>
-        document.getElementById('item-name').innerText = sessionStorage.getItem('itemName')
-        document.getElementById('item-price').innerText = sessionStorage.getItem('itemPrice')
+        const urlParams = new URLSearchParams(location.search)
+        const itemName = urlParams.get('name')
+        const itemPrice = urlParams.get('price')
+
+        document.getElementById('item-name').innerText = itemName
+        document.getElementById('item-price').innerText = itemPrice
 
         var counter = 0;
         function addToCart() {
@@ -123,7 +127,7 @@
             document.getElementById('counter').innerText = counter
         }
 
-        fetch(`${API_BASE_URL}/apriori/items/${sessionStorage.getItem('itemName')}/`).then(response => {
+        fetch(`${API_BASE_URL}/apriori/items/${itemName}/`).then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -176,10 +180,9 @@
                     card.setAttribute('itemPrice', item.price)
                     card.append(elm3_1, card_body)
                     card.addEventListener('click', function (e) {
-                        sessionStorage.setItem('itemName', this.getAttribute('itemname'))
-                        sessionStorage.setItem('itemPrice', this.getAttribute('itemprice'))
-                        console.log(sessionStorage.getItem('itemName'), sessionStorage.getItem('itemPrice'))
-                        open('item.html', '_blank')
+                        const name = this.getAttribute('itemname')
+                        const price = this.getAttribute('itemprice')
+                        open(`item.html?name=${encodeURIComponent(name)}&price=${encodeURIComponent(price)}`, '_blank')
                     })
 
                     let elm1 = document.createElement('div')
